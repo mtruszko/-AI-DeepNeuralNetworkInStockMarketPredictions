@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# OSX Specific files
+.DS_Store
