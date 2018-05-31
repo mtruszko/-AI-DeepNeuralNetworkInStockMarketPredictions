@@ -2,11 +2,9 @@ library(rJava)
 library(RMOA)
 
 library(readr)
-#library(data.table) 
 
 trainingData <- read_delim("trainingData/trainingData.csv",
 ";", escape_double = FALSE, trim_ws = TRUE)
-View(trainingData)
 
 funcTransformedTrainingData <- function(x) {
   x$Decision <- factor(x$Decision)
@@ -17,29 +15,29 @@ funcTransformedTrainingData <- function(x) {
 
 exampleOfData <- trainingData[1:100,]
 exampleOfData <- funcTransformedTrainingData(exampleOfData)
-str(exampleOfData)
 
 filteredData <- trainingData[trainingData$SymbolID == "S110280",]
-str(filteredData)
 
 funcParseToSequences <- function(tableOfDecisions, numberOfRecommendationsInSequence, selectFunc) {
   #tableOfDecisions - Symbol;Recommendation;Decision
   #numberOfRecommendationsInSequence - sequence window lenght
   #selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
   
+  #for each record in tableOfDecisions
   #TODO: change for-in to applay
   for(i in 1:nrow(tableOfDecisions)) {
+    #parse recommendation
     recommendarions <- tableOfDecisions[i,]$Recommendations
     a <- funcParseRecommendatins(recommendarions)
-    print(recommendarions)
-    print(a)
+    #addTransactionId
   }
   
-  #for each record in tableOfDecisions
-    #parse recommendation 
-    #divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
+  #merge with CompanyID
+  
+  #divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
+  
   #select appropriate number of attributes using selectFunc
-  #add CompanyID
+  
   #create new table to return
   
   #retun - Symbol;CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n);...n>0...;Decision
@@ -53,7 +51,7 @@ funcParseRecommendatins <- function(stringRecommendations) {
   listOfStringEvent <- strsplit(stringWithoutFirstAndLast, "\\}\\{") 
   
   vectorOfStringEvents <- unlist(listOfStringEvent)
-  listOfSplitedEvent <- strsplit(vectorOfStringsEvents, ",")
+  listOfSplitedEvent <- strsplit(vectorOfStringEvents, ",")
   
   matrixOfEvents <- matrix(unlist(listOfSplitedEvent), ncol=4, byrow=TRUE)
   dataFrameOfEvents <- as.data.frame(matrixOfEvents)
