@@ -1,6 +1,7 @@
 library(rJava)
 library(RMOA)
 library(readr)
+library(stringr)
 
 trainingData <- read_delim("trainingData/trainingData.csv",
                            ";", escape_double = FALSE, trim_ws = TRUE)
@@ -21,52 +22,40 @@ funcTransformedCompanyData <- function(x) {
   x
 }
 
-exampleOfData <- trainingData[1:100,]
-exampleOfData <- funcTransformedTrainingData(exampleOfData)
-
 companyData <- funcTransformedCompanyData(companyData)
 
-filteredData <- trainingData[trainingData$SymbolID == "S110280",]
+################################# FUNCTIONS ##################################################
 
-funcParseToSequences <- function(tableOfDecisions, numberOfRecommendationsInSequence, selectFunc) {
+funcParseToFull <- function(tableWithRecommendarions) {
   #tableOfDecisions - Symbol;Recommendation;Decision
-  #numberOfRecommendationsInSequence - sequence window lenght
-  #selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
-  x <- data.frame()
-  #for each record in tableOfDecisions
-  #TODO: change for-in to applay
-  for(i in 1:nrow(tableOfDecisions)) {
+  
+  dataFrameAllEvents <- data.frame()
+
+  for(i in 1:nrow(tableWithRecommendarions)) {
+    transaction <- tableWithRecommendarions[i,]
+    
     #parse recommendation
-    recommendarions <- tableOfDecisions[i,]$Recommendations
-    a <- funcParseRecommendatins(recommendarions)
+    recommendarions <- transaction$Recommendations
+    dataFrameTransactionEvents <- funcParseRecommendatins(recommendarions)
     
     #copy data and mark all recommendatins
-    a$Decision <- tableOfDecisions[i,]$Decision
-    a$Decision <- factor(a$Decision)
-    a$SymbolID <- tableOfDecisions[i,]$SymbolID
-    a$SymbolID <- factor(a$SymbolID)
-    a$TransactionID <- i
+    dataFrameTransactionEvents$Decision <- transaction$Decision
+    dataFrameTransactionEvents$Decision <- factor(dataFrameTransactionEvents$Decision)
+    dataFrameTransactionEvents$SymbolID <- transaction$SymbolID
+    dataFrameTransactionEvents$SymbolID <- factor(dataFrameTransactionEvents$SymbolID)
+    dataFrameTransactionEvents$TransactionID <- i
     
     #expand previously obtanined data
-    x <- rbind(x, a)
+    dataFrameAllEvents <- rbind(dataFrameAllEvents, dataFrameTransactionEvents)
   }
   
-  #merge with CompanyID
-  x <- merge(x, companyData)
+  #merge with CompanyData
+  dataFrameAllEvents <- merge(dataFrameAllEvents, companyData)
   
-  print(x)
-  str(x)
-  
-  #divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
-  
-  #select appropriate number of attributes using selectFunc
-  
-  #create new table to return
-  
-  #retun - Symbol;CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n);...n>0...;Decision
+  return(dataFrameAllEvents)
+  #retun - SymbolID;CompanyID;ExpertID;Prediction;PredictedValue;DaysBefore;Decision;TransactionID
 }
 
-library(stringr)
 funcParseRecommendatins <- function(stringRecommendations) {
   #stringRecommendations - string of recommendatins to parse
   
@@ -81,7 +70,6 @@ funcParseRecommendatins <- function(stringRecommendations) {
   colnames(dataFrameOfEvents) <- c("ExpertID", "Prediction", "PredictedValue", "DaysBefore")
   
   return(dataFrameOfEvents)
-  
   #return data frame of events ExpertID;Prediction;PredictedValue;DaysBefore
 }
 
@@ -97,4 +85,32 @@ funcChoseEventsOneByOne <- function(recommendationsEvents, lenght) {
   #return - recommendations divided to rows
 }
 
-parsed <- funcParseToSequences(tableOfDecisions = filteredData)
+#################################### MAIN ##############################################
+
+exampleOfData <- trainingData[1:100,]
+exampleOfData <- funcTransformedTrainingData(exampleOfData)
+
+filteredData <- trainingData[trainingData$SymbolID == "S110280",]
+
+parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
+
+print(parsed)
+str(parsed)
+
+#numberOfRecommendationsInSequence - sequence window lenght
+#selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
+
+
+#divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
+
+#select appropriate number of attributes using selectFunc
+
+#create new table to return
+#retun - Symbol;CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n);...n>0...;Decision
+
+
+
+
+
+#TODO: predictedValue as numeric
+#TODO: add grouping function
