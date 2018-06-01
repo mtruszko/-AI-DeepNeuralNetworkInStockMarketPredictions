@@ -3,6 +3,8 @@ library(RMOA)
 library(readr)
 library(stringr)
 
+#################################### INITIALIZATION ##########################################
+
 trainingData <- read_delim("trainingData/trainingData.csv",
                            ";", escape_double = FALSE, trim_ws = TRUE)
 
@@ -23,6 +25,7 @@ funcTransformedCompanyData <- function(x) {
 }
 
 companyData <- funcTransformedCompanyData(companyData)
+factoredTrainingData <- funcTransformedTrainingData(trainingData)
 
 ################################# FUNCTIONS ##################################################
 
@@ -73,8 +76,24 @@ funcParseRecommendatins <- function(stringRecommendations) {
   #return data frame of events ExpertID;Prediction;PredictedValue;DaysBefore
 }
 
-funcChoseEventsOneByOne <- function(recommendationsEvents, lenght) {
-  #recommendationsEvents - CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n).......
+funcFilterBy <- function(dataFrameOfEvents, symbolID, expertID, companyID) {
+  filteredEvents <- dataFrameOfEvents
+  if (hasArg(symbolID)) {
+    filteredEvents <- filteredEvents[filteredEvents$SymbolID == symbolID,]
+  }
+  
+  if (hasArg(companyID)) {
+    filteredEvents <- filteredEvents[filteredEvents$CompanyID == companyID,]
+  }
+  
+  if (hasArg(expertID)) {
+    filteredEvents <- filteredEvents[filteredEvents$ExpertID == expertID,]
+  }
+  
+  return(filteredEvents)
+}
+
+funcChoseEventsOneByOne <- function(events, lenght) {
   #lenght - numberOfSequences
   
   #for event in recommendationsEvents
@@ -82,28 +101,33 @@ funcChoseEventsOneByOne <- function(recommendationsEvents, lenght) {
   #addToRow
   #startNewRow
   
+  
+  
   #return - recommendations divided to rows
 }
 
 #################################### MAIN ##############################################
 
-exampleOfData <- trainingData[1:100,]
-exampleOfData <- funcTransformedTrainingData(exampleOfData)
-
-filteredData <- trainingData[trainingData$SymbolID == "S110280",]
+#smaller subset for optiamlisation
+filteredData <- trainingData[factoredTrainingData$SymbolID == "S110280",]
 
 parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
 
 print(parsed)
 str(parsed)
 
+#divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
+
+filtered <- funcFilterBy(parsed, symbolID = "S110280", companyID = "21")
+
+print(filtered)
+
 #numberOfRecommendationsInSequence - sequence window lenght
 #selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
 
-
-#divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
-
 #select appropriate number of attributes using selectFunc
+
+
 
 #create new table to return
 #retun - Symbol;CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n);...n>0...;Decision
