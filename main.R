@@ -3,6 +3,8 @@ library(RMOA)
 library(readr)
 library(stringr)
 
+source('Sequence.R')
+
 #################################### INITIALIZATION ##########################################
 
 trainingData <- read_delim("trainingData/trainingData.csv",
@@ -93,17 +95,39 @@ funcFilterBy <- function(dataFrameOfEvents, symbolID, expertID, companyID) {
   return(filteredEvents)
 }
 
-funcChoseEventsOneByOne <- function(events, lenght) {
-  #lenght - numberOfSequences
+funcCreateSequenceOneByOne <- function(events,
+                                       lenght, 
+                                       filteredByExpert = TRUE,
+                                       filteredByCompany = FALSE) {
+  maxTransaction <- max(events$TransactionID, na.rm = TRUE)
   
-  #for event in recommendationsEvents
-  #for i in lenght
-  #addToRow
-  #startNewRow
+  sequences <- data.frame()
   
+  for (t in 1:maxTransaction) {
+    transactionEvents <- events[events$TransactionID == t,]
+    numberOfEvents <- nrow(transactionEvents)
+    
+    if (numberOfEvents < lenght) {
+      next()
+    }
+    
+    for (i in 1:numberOfEvents) {
+      if (numberOfEvents - i < lenght) {
+        break()
+      }
+      
+      rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "CompanyID", "ExpertID")]
+      for (j in 1:lenght) {
+        rowToReturn[paste("Prediction", j, sep = "_")] = transactionEvents$Prediction[i + j - 1]
+        rowToReturn[paste("PredictedValue", j, sep = "_")] = transactionEvents$PredictedValue[i + j - 1]
+        rowToReturn[paste("DaysBefore", j, sep = "_")] = transactionEvents$DaysBefore[i + j - 1]
+      }
+      
+      sequences <- rbind(sequences, rowToReturn)
+    }
+  }
   
-  
-  #return - recommendations divided to rows
+  return(sequences)
 }
 
 #################################### MAIN ##############################################
@@ -114,13 +138,13 @@ filteredData <- trainingData[factoredTrainingData$SymbolID == "S110280",]
 parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
 
 print(parsed)
-str(parsed)
+#str(parsed)
 
 #divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
 
 filtered <- funcFilterBy(parsed, symbolID = "S110280", companyID = "21")
 
-print(filtered)
+#print(filtered)
 
 #numberOfRecommendationsInSequence - sequence window lenght
 #selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
@@ -128,11 +152,9 @@ print(filtered)
 #select appropriate number of attributes using selectFunc
 
 
+seq <- funcCreateSequenceOneByOne(parsed, 2) 
 
-#create new table to return
-#retun - Symbol;CompanyID(n);ExpertID(n);Prediction(n);PredictedValue(n);DaysBefore(n);...n>0...;Decision
-
-
+print(seq)
 
 
 
