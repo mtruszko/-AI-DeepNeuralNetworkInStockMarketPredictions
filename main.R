@@ -107,12 +107,15 @@ funcCreateSequenceOneByOne <- function(events,
     
     possibilities <- 1
     
+    
     switch(filterType,
            EXPERT = { 
-             possibilities <- nlevels(transactionEvents$ExpertID)
+             uniqueEpertsIDs = unique(transactionEvents$ExpertID)
+             possibilities <- length(uniqueEpertsIDs)
            },
            COMPANY = {
-             possibilities <- nlevels(transactionEvents$CompanyID)
+             uniqueCompanyIDs <- unique(transactionEvents$CompanyID)
+             possibilities <- length(uniqueCompanyIDs)
            },
            {
 
@@ -121,36 +124,36 @@ funcCreateSequenceOneByOne <- function(events,
     for (e in 1:possibilities) {
       switch(filterType,
              EXPERT = { 
-               transactionEvents <- transactionEvents[transactionEvents$ExpertID == transactionEvents$ExpertID[e],]
+               filteredTransactionEvents <- transactionEvents[transactionEvents$ExpertID == uniqueEpertsIDs[e],]
              },
              COMPANY = {
-               transactionEvents <- transactionEvents[transactionEvents$CompanyID == transactionEvents$CompanyID[e],]
+               filteredTransactionEvents <- transactionEvents[transactionEvents$CompanyID == uniqueCompanyIDs[e],]
              },
              {
-               
+               filteredTransactionEvents <- transactionEvents
              })
       
-      numberOfEvents <- nrow(transactionEvents)
+      numberOfEvents <- nrow(filteredTransactionEvents)
       
       if (numberOfEvents < lenght) {
         next()
       }
       
       for (i in 1:numberOfEvents) {
-        if (numberOfEvents - i < lenght) {
+        if (numberOfEvents - i < lenght - 1) {
           break()
         }
         
         rowToReturn <- data.frame()
         switch(filterType,
                EXPERT = { 
-                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "CompanyID", "ExpertID", "TransactionID")]
+                 rowToReturn <- filteredTransactionEvents[1,c("Decision", "SymbolID", "CompanyID", "ExpertID", "TransactionID")]
                },
                COMPANY = {
-                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID","CompanyID", "TransactionID")]
+                 rowToReturn <- filteredTransactionEvents[1,c("Decision", "SymbolID","CompanyID", "TransactionID")]
                },
                {
-                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "TransactionID")]
+                 rowToReturn <- filteredTransactionEvents[1,c("Decision", "SymbolID", "TransactionID")]
                })
         
         for (j in 1:lenght) {
@@ -159,16 +162,16 @@ funcCreateSequenceOneByOne <- function(events,
                    
                  },
                  COMPANY = {
-                   rowToReturn[paste("ExpertID", j, sep = "_")] = transactionEvents$ExpertID[i + j - 1]
+                   rowToReturn[paste("ExpertID", j, sep = "_")] = filteredTransactionEvents$ExpertID[i + j - 1]
                  },
                  {
-                   rowToReturn[paste("ExpertID", j, sep = "_")] = transactionEvents$ExpertID[i + j - 1]
-                   rowToReturn[paste("CompanyID", j, sep = "_")] = transactionEvents$CompanyID[i + j - 1]
+                   rowToReturn[paste("ExpertID", j, sep = "_")] = filteredTransactionEvents$ExpertID[i + j - 1]
+                   rowToReturn[paste("CompanyID", j, sep = "_")] = filteredTransactionEvents$CompanyID[i + j - 1]
                  })
           
-          rowToReturn[paste("Prediction", j, sep = "_")] = transactionEvents$Prediction[i + j - 1]
-          rowToReturn[paste("PredictedValue", j, sep = "_")] = transactionEvents$PredictedValue[i + j - 1]
-          rowToReturn[paste("DaysBefore", j, sep = "_")] = transactionEvents$DaysBefore[i + j - 1]
+          rowToReturn[paste("Prediction", j, sep = "_")] = filteredTransactionEvents$Prediction[i + j - 1]
+          rowToReturn[paste("PredictedValue", j, sep = "_")] = filteredTransactionEvents$PredictedValue[i + j - 1]
+          rowToReturn[paste("DaysBefore", j, sep = "_")] = filteredTransactionEvents$DaysBefore[i + j - 1]
           
           sequences <- rbind(sequences, rowToReturn)
         }
@@ -201,7 +204,7 @@ filtered <- funcFilterBy(parsed, symbolID = "S110280", companyID = "21")
 #select appropriate number of attributes using selectFunc
 
 
-seq <- funcCreateSequenceOneByOne(parsed, 1) 
+seq <- funcCreateSequenceOneByOne(parsed, 2, filterType = "a") 
 
 print(seq)
 
