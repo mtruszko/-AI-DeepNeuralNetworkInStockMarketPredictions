@@ -35,7 +35,7 @@ funcParseToFull <- function(tableWithRecommendarions) {
   #tableOfDecisions - Symbol;Recommendation;Decision
   
   dataFrameAllEvents <- data.frame()
-
+  
   for(i in 1:nrow(tableWithRecommendarions)) {
     transaction <- tableWithRecommendarions[i,]
     
@@ -97,33 +97,82 @@ funcFilterBy <- function(dataFrameOfEvents, symbolID, expertID, companyID) {
 
 funcCreateSequenceOneByOne <- function(events,
                                        lenght, 
-                                       filteredByExpert = TRUE,
-                                       filteredByCompany = FALSE) {
+                                       filterType = "EXPERT") {
   maxTransaction <- max(events$TransactionID, na.rm = TRUE)
   
   sequences <- data.frame()
   
   for (t in 1:maxTransaction) {
     transactionEvents <- events[events$TransactionID == t,]
-    numberOfEvents <- nrow(transactionEvents)
     
-    if (numberOfEvents < lenght) {
-      next()
-    }
+    possibilities <- 1
     
-    for (i in 1:numberOfEvents) {
-      if (numberOfEvents - i < lenght) {
-        break()
+    switch(filterType,
+           EXPERT = { 
+             possibilities <- nlevels(transactionEvents$ExpertID)
+           },
+           COMPANY = {
+             possibilities <- nlevels(transactionEvents$CompanyID)
+           },
+           {
+
+           })
+    
+    for (e in 1:possibilities) {
+      switch(filterType,
+             EXPERT = { 
+               transactionEvents <- transactionEvents[transactionEvents$ExpertID == transactionEvents$ExpertID[e],]
+             },
+             COMPANY = {
+               transactionEvents <- transactionEvents[transactionEvents$CompanyID == transactionEvents$CompanyID[e],]
+             },
+             {
+               
+             })
+      
+      numberOfEvents <- nrow(transactionEvents)
+      
+      if (numberOfEvents < lenght) {
+        next()
       }
       
-      rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "CompanyID", "ExpertID")]
-      for (j in 1:lenght) {
-        rowToReturn[paste("Prediction", j, sep = "_")] = transactionEvents$Prediction[i + j - 1]
-        rowToReturn[paste("PredictedValue", j, sep = "_")] = transactionEvents$PredictedValue[i + j - 1]
-        rowToReturn[paste("DaysBefore", j, sep = "_")] = transactionEvents$DaysBefore[i + j - 1]
+      for (i in 1:numberOfEvents) {
+        if (numberOfEvents - i < lenght) {
+          break()
+        }
+        
+        rowToReturn <- data.frame()
+        switch(filterType,
+               EXPERT = { 
+                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "CompanyID", "ExpertID", "TransactionID")]
+               },
+               COMPANY = {
+                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID","CompanyID", "TransactionID")]
+               },
+               {
+                 rowToReturn <- transactionEvents[1,c("Decision", "SymbolID", "TransactionID")]
+               })
+        
+        for (j in 1:lenght) {
+          switch(filterType,
+                 EXPERT = { 
+                   
+                 },
+                 COMPANY = {
+                   rowToReturn[paste("ExpertID", j, sep = "_")] = transactionEvents$ExpertID[i + j - 1]
+                 },
+                 {
+                   rowToReturn[paste("ExpertID", j, sep = "_")] = transactionEvents$ExpertID[i + j - 1]
+                   rowToReturn[paste("CompanyID", j, sep = "_")] = transactionEvents$CompanyID[i + j - 1]
+                 })
+          
+          rowToReturn[paste("Prediction", j, sep = "_")] = transactionEvents$Prediction[i + j - 1]
+          rowToReturn[paste("PredictedValue", j, sep = "_")] = transactionEvents$PredictedValue[i + j - 1]
+          rowToReturn[paste("DaysBefore", j, sep = "_")] = transactionEvents$DaysBefore[i + j - 1]
+          
+          sequences <- rbind(sequences, rowToReturn)
+        }
       }
-      
-      sequences <- rbind(sequences, rowToReturn)
     }
   }
   
@@ -152,7 +201,7 @@ filtered <- funcFilterBy(parsed, symbolID = "S110280", companyID = "21")
 #select appropriate number of attributes using selectFunc
 
 
-seq <- funcCreateSequenceOneByOne(parsed, 2) 
+seq <- funcCreateSequenceOneByOne(parsed, 1) 
 
 print(seq)
 
