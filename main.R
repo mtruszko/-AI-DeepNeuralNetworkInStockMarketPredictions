@@ -3,8 +3,6 @@ library(RMOA)
 library(readr)
 library(stringr)
 
-source('Sequence.R')
-
 #################################### INITIALIZATION ##########################################
 
 trainingData <- read_delim("trainingData/trainingData.csv",
@@ -52,6 +50,8 @@ funcParseToFull <- function(tableWithRecommendarions) {
     
     #expand previously obtanined data
     dataFrameAllEvents <- rbind(dataFrameAllEvents, dataFrameTransactionEvents)
+    
+    print(i)
   }
   
   #merge with CompanyData
@@ -78,23 +78,6 @@ funcParseRecommendatins <- function(stringRecommendations) {
   #return data frame of events ExpertID;Prediction;PredictedValue;DaysBefore
 }
 
-funcFilterBy <- function(dataFrameOfEvents, symbolID, expertID, companyID) {
-  filteredEvents <- dataFrameOfEvents
-  if (hasArg(symbolID)) {
-    filteredEvents <- filteredEvents[filteredEvents$SymbolID == symbolID,]
-  }
-  
-  if (hasArg(companyID)) {
-    filteredEvents <- filteredEvents[filteredEvents$CompanyID == companyID,]
-  }
-  
-  if (hasArg(expertID)) {
-    filteredEvents <- filteredEvents[filteredEvents$ExpertID == expertID,]
-  }
-  
-  return(filteredEvents)
-}
-
 funcCreateSequenceOneByOne <- function(events,
                                        lenght, 
                                        filterType = "EXPERT") {
@@ -103,6 +86,7 @@ funcCreateSequenceOneByOne <- function(events,
   sequences <- data.frame()
   
   for (t in 1:maxTransaction) {
+    print(t)
     transactionEvents <- events[events$TransactionID == t,]
     
     possibilities <- 1
@@ -173,8 +157,8 @@ funcCreateSequenceOneByOne <- function(events,
           rowToReturn[paste("PredictedValue", j, sep = "_")] = filteredTransactionEvents$PredictedValue[i + j - 1]
           rowToReturn[paste("DaysBefore", j, sep = "_")] = filteredTransactionEvents$DaysBefore[i + j - 1]
           
-          sequences <- rbind(sequences, rowToReturn)
         }
+        sequences <- rbind(sequences, rowToReturn)
       }
     }
   }
@@ -187,24 +171,13 @@ funcCreateSequenceOneByOne <- function(events,
 #smaller subset for optiamlisation
 filteredData <- trainingData[factoredTrainingData$SymbolID == "S110280",]
 
-parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
+parsed <- funcParseToFull(tableWithRecommendarions = trainingData)
 
 print(parsed)
 #str(parsed)
 
-#divide by ExpertID (optional); maybe divide by companyID then maybe withoutExpertID
 
-filtered <- funcFilterBy(parsed, symbolID = "S110280", companyID = "21")
-
-#print(filtered)
-
-#numberOfRecommendationsInSequence - sequence window lenght
-#selectFunc - function to specify how select attributes (oneByOne, startMiddleEnd)
-
-#select appropriate number of attributes using selectFunc
-
-
-seq <- funcCreateSequenceOneByOne(parsed, 2, filterType = "a") 
+seq <- funcCreateSequenceOneByOne(parsed, 2) 
 
 print(seq)
 
