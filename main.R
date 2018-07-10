@@ -74,6 +74,8 @@ funcParseRecommendatins <- function(stringRecommendations) {
   dataFrameOfEvents <- as.data.frame(matrixOfEvents)
   colnames(dataFrameOfEvents) <- c("ExpertID", "Prediction", "PredictedValue", "DaysBefore")
   
+  dataFrameOfEvents$PredictedValue <- as.numeric(as.character(dataFrameOfEvents$PredictedValue))
+  
   return(dataFrameOfEvents)
   #return data frame of events ExpertID;Prediction;PredictedValue;DaysBefore
 }
@@ -90,7 +92,6 @@ funcCreateSequenceOneByOne <- function(events,
     transactionEvents <- events[events$TransactionID == t,]
     
     possibilities <- 1
-    
     
     switch(filterType,
            EXPERT = { 
@@ -166,22 +167,101 @@ funcCreateSequenceOneByOne <- function(events,
   return(sequences)
 }
 
+#################################### TO ONE ROW ########################################
+
+funcTransactionPartStatistic <- function(table,
+                                         numberOfParts = 4) {
+  tableWithPartedTransactions <- data.frame()
+  
+  numberOfTransactions <- 21
+  for (ti in 1:numberOfTransactions) {
+    oneTransactionTable <- table[table$TransactionID == ti,]
+    oneRowTransaction <- funcTransactionToOneRow(transactionTable = oneTransactionTable, numberOfParts = numberOfParts)
+    tableWithPartedTransactions <- rbind(tableWithPartedTransactions, oneRowTransaction)
+  }
+  
+  #clean data
+  is.na(tableWithPartedTransactions)<-sapply(tableWithPartedTransactions, is.infinite)
+  tableWithPartedTransactions[is.na(tableWithPartedTransactions)]<-0
+  
+  return(tableWithPartedTransactions)
+}
+
+funcTransactionToOneRow <- function(transactionTable, numberOfParts) {
+  
+  rowToReturn <- data.frame(matrix(ncol=0, nrow=0))
+  rowToReturn <- transactionTable[1,c("Decision", "SymbolID")]
+  
+  numberOfAllDays <- 60
+    
+  for (i in 1:numberOfParts) {
+    interval = abs(numberOfAllDays / numberOfParts)
+    
+    fromDay <- interval * (i - 1)
+    toDay <- interval * i - 1
+    
+    selectedTable <- transactionTable[transactionTable$DaysBefore_1 %in% c(fromDay:toDay),]
+    
+    onlyPrediction <- selectedTable[,c("Prediction_1", "PredictedValue_1")]
+    
+    dsds <- funcStaristicForPart(transactionTable = onlyPrediction, part = i)
+    
+    rowToReturn <- merge(rowToReturn, dsds)
+  }
+  
+  return(rowToReturn)
+}
+
+funcStaristicForPart <- function(transactionTable, part = 1) {
+  rowToReturn = data.frame(matrix(ncol=0, nrow=1))
+  
+  rowToReturn[paste("Buys", part, sep = "_")] = 0
+  rowToReturn[paste("Sells", part, sep = "_")] = 0
+  rowToReturn[paste("Holds", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMin", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMax", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMean", part, sep = "_")] = 0
+  
+  tableTransitionTable <- as.data.frame(table(unlist(transactionTable[, 1])))
+  
+  rowToReturn[paste("Buys", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Buy", "Freq"]
+  rowToReturn[paste("Sells", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Sell", "Freq"]
+  rowToReturn[paste("Holds", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Hold", "Freq"]
+  rowToReturn[paste("PredictedMin", part, sep = "_")] = min(transactionTable[,2], na.rm = TRUE)
+  rowToReturn[paste("PredictedMax", part, sep = "_")] = max(transactionTable[,2], na.rm = TRUE)
+  rowToReturn[paste("PredictedMean", part, sep = "_")] = mean(transactionTable[,2], na.rm = TRUE)
+  
+  return(rowToReturn)
+}
+
 #################################### MAIN ##############################################
 
 #smaller subset for optiamlisation
-filteredData <- trainingData[factoredTrainingData$SymbolID == "S110280",]
+filteredData <- trainingData[trainingData$SymbolID == "S110280",]
 
-parsed <- funcParseToFull(tableWithRecommendarions = trainingData)
+#chunkOfTrainingRecords <- trainingData[1]
+
+parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
 
 print(parsed)
-#str(parsed)
 
-
-seq <- funcCreateSequenceOneByOne(parsed, 2) 
+seq <- funcCreateSequenceOneByOne(parsed, 1, filterType = "") 
 
 print(seq)
 
+one <- funcTransactionPartStatistic(table = seq, 4)
+
+print(one)
 
 
-#TODO: predictedValue as numeric
-#TODO: add grouping function
+
+
+
+
+
+
+
+
+
+
+######################################### END ############################################
