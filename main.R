@@ -270,7 +270,7 @@ library("neuralnet")
 
 funcTrain <- function(scaledData) {
   data <- funcNormalize(scaledData)
-  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=10, threshold=0.01)
+  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10))
   print(net)
   plot(net)
   
