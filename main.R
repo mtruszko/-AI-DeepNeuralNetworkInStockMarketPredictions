@@ -253,6 +253,8 @@ funcNormalize <- function(dataX) {
   
   scaled <- as.data.frame(scale(data, center = mins, scale = maxs - mins))
   
+  scaled[is.na(scaled)]<-0
+  
   return(scaled)
 }
 
@@ -277,17 +279,17 @@ funcTrain <- function(scaledData) {
 
 ###################################### TEST NET ########################################
 
-#funcTestModel <- function(model, testData) {
-#  data <- funcNormalize(testData)
-#  result <- compute(model, data)
-#  
-#  ls(result)
-#}
+funcTestModel <- function(model, testData) {
+  data <- funcNormalize(testData)
+  result <- compute(model, data)
+  
+  ls(result)
+}
 
 #################################### MAIN ##############################################
 
 #smaller subset for optiamlisation
-filteredData <- trainingData[trainingData$SymbolID == "S110280",]
+filteredData <- trainingData[trainingData$SymbolID == "S591675",]
 
 #chunkOfTrainingRecords <- trainingData[1]
 
@@ -307,12 +309,14 @@ netModel <- funcTrain(one)
 
 
 
-#filteredTestData <- trainingData[trainingData$SymbolID == "S591675",]
-#parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
-#seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
-#oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
+filteredTestData <- trainingData[trainingData$SymbolID == "S110280",]
+parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
+seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
+oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
 
-#funcTestModel(netModel, oneTest)
+print(oneTest)
+
+funcTestModel(netModel, oneTest)
 
 
 
