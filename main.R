@@ -270,11 +270,46 @@ library("neuralnet")
 
 funcTrain <- function(scaledData) {
   data <- funcNormalize(scaledData)
-  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10))
-  print(net)
-  plot(net)
+  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10), linear.output=FALSE)
+  #print(net)
+  #plot(net)
   
   return(net)
+}
+
+
+#devtools::install_github("rstudio/keras")
+library(keras)
+#install_keras()
+#install_keras(tensorflow = "gpu")
+
+funcTrainKeras <- function(trainData, testData) {
+  trainData <- funcNormalize(trainData)
+  testData <- funcNormalize(testData)
+  
+  model <- keras_model_sequential() 
+  model %>% 
+    layer_dense(units = 6, activation = 'relu', input_shape = c(6)) %>% 
+    layer_dropout(rate = 0.4) %>% 
+    layer_dense(units = 10, activation = 'relu') %>%
+    layer_dropout(rate = 0.3) %>%
+    layer_dense(units = 10, activation = 'softmax')
+  
+  summary(model)
+  
+  model %>% compile(
+    loss = 'categorical_crossentropy',
+    optimizer = optimizer_rmsprop(),
+    metrics = c('accuracy')
+  )
+  
+  history <- model %>% fit(
+    trainData, testData, 
+    epochs = 30, batch_size = 128, 
+    validation_split = 0.2
+  )
+  
+  plot(history)
 }
 
 ###################################### TEST NET ########################################
@@ -288,11 +323,19 @@ funcTestModel <- function(model, testData) {
   
   print(net.results$net.result)
   
+  roundedResults <- round(net.results$net.result, 0)
+  
+  print(roundedResults)
+  
   #Lets display a better version of the results
   cleanoutput <- cbind(testModelData[,1:3], data[,7:9],
-                       as.data.frame(net.results$net.result))
+                       #as.data.frame(net.results$net.result))
+                       as.data.frame(roundedResults))
   colnames(cleanoutput) <- c("IN_BUYS", "IN_SELLS", "IN_HOLDS", "EXP_BUYS", "EXP_SELLS", "EXP_HOLDS", "OUT_BUYS", "OUT_SELLS", "OUT_HOLDS")
   print(cleanoutput)
+  
+  #a <- table(testModelData[,1:3], roundedResults)
+  #print(a)
 }
 
 #################################### MAIN ##############################################
@@ -314,7 +357,7 @@ one <- funcTransactionPartStatistic(table = seq, 1)
 
 print(one)
 
-netModel <- funcTrain(one)
+#netModel <- funcTrain(one)
 
 
 
@@ -325,7 +368,9 @@ oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
 
 print(oneTest)
 
-funcTestModel(netModel, oneTest)
+#funcTestModel(netModel, oneTest)
+
+funcTrainKeras(one,oneTest)
 
 
 
