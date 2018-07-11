@@ -180,7 +180,6 @@ funcTransactionPartStatistic <- function(table,
     tableWithPartedTransactions <- rbind(tableWithPartedTransactions, oneRowTransaction)
   }
   
-  #clean data
   is.na(tableWithPartedTransactions)<-sapply(tableWithPartedTransactions, is.infinite)
   tableWithPartedTransactions[is.na(tableWithPartedTransactions)]<-0
   
@@ -215,13 +214,6 @@ funcTransactionToOneRow <- function(transactionTable, numberOfParts) {
 funcStaristicForPart <- function(transactionTable, part = 1) {
   rowToReturn = data.frame(matrix(ncol=0, nrow=1))
   
-  rowToReturn[paste("Buys", part, sep = "_")] = 0
-  rowToReturn[paste("Sells", part, sep = "_")] = 0
-  rowToReturn[paste("Holds", part, sep = "_")] = 0
-  rowToReturn[paste("PredictedMin", part, sep = "_")] = 0
-  rowToReturn[paste("PredictedMax", part, sep = "_")] = 0
-  rowToReturn[paste("PredictedMean", part, sep = "_")] = 0
-  
   tableTransitionTable <- as.data.frame(table(unlist(transactionTable[, 1])))
   
   rowToReturn[paste("Buys", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Buy", "Freq"]
@@ -233,6 +225,64 @@ funcStaristicForPart <- function(transactionTable, part = 1) {
   
   return(rowToReturn)
 }
+
+############################################# NORMALIZE ##############################
+
+funcNormalize <- function(dataX) {
+  #removing SymbolID
+  data <- subset(dataX, select = -2)
+  
+  #Decision to 0 0 1 and remove
+  
+  decisionCol <- subset(data, select = 1)
+  data <- subset(data, select = -1)
+  
+  data$Buy <- apply(decisionCol, 2, funcCompare, "Buy")
+  data$Sell <- apply(decisionCol, 2, funcCompare, "Sell")
+  data$Hold <- apply(decisionCol, 2, funcCompare, "Hold")
+  
+  #as numeric
+  
+  data <- as.data.frame(sapply(data, as.numeric))
+  
+  str(data)
+  
+  #mormalize
+  maxs <- apply(data, 2, max) 
+  mins <- apply(data, 2, min)
+  
+  scaled <- as.data.frame(scale(data, center = mins, scale = maxs - mins))
+  
+  return(scaled)
+}
+
+funcCompare <- function(x, rhs) {
+  x[x == rhs] <- 1 
+  x[x != 1] <- 0
+  x
+}
+
+#################################### ML ################################################
+
+library("neuralnet")
+
+funcTrain <- function(scaledData) {
+  data <- funcNormalize(scaledData)
+  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=10, threshold=0.01)
+  print(net)
+  plot(net)
+  
+  return(net)
+}
+
+###################################### TEST NET ########################################
+
+#funcTestModel <- function(model, testData) {
+#  data <- funcNormalize(testData)
+#  result <- compute(model, data)
+#  
+#  ls(result)
+#}
 
 #################################### MAIN ##############################################
 
@@ -249,16 +299,20 @@ seq <- funcCreateSequenceOneByOne(parsed, 1, filterType = "")
 
 print(seq)
 
-one <- funcTransactionPartStatistic(table = seq, 4)
+one <- funcTransactionPartStatistic(table = seq, 1)
 
 print(one)
 
+netModel <- funcTrain(one)
 
 
 
+#filteredTestData <- trainingData[trainingData$SymbolID == "S591675",]
+#parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
+#seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
+#oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
 
-
-
+#funcTestModel(netModel, oneTest)
 
 
 
