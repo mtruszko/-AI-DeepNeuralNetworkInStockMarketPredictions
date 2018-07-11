@@ -281,9 +281,18 @@ funcTrain <- function(scaledData) {
 
 funcTestModel <- function(model, testData) {
   data <- funcNormalize(testData)
-  result <- compute(model, data)
+  testModelData <- data[, 1:6]
+  net.results <- compute(model, testModelData)
   
-  ls(result)
+  ls(net.results)
+  
+  print(net.results$net.result)
+  
+  #Lets display a better version of the results
+  cleanoutput <- cbind(testModelData[,1:3], data[,7:9],
+                       as.data.frame(net.results$net.result))
+  colnames(cleanoutput) <- c("IN_BUYS", "IN_SELLS", "IN_HOLDS", "EXP_BUYS", "EXP_SELLS", "EXP_HOLDS", "OUT_BUYS", "OUT_SELLS", "OUT_HOLDS")
+  print(cleanoutput)
 }
 
 #################################### MAIN ##############################################
