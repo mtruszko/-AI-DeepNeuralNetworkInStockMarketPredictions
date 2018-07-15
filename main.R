@@ -234,7 +234,7 @@ funcStaristicForPart <- function(transactionTable, part = 1) {
   rowToReturn[paste("Holds", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Hold", "Freq"]
   rowToReturn[paste("PredictedMin", part, sep = "_")] = min(transactionTable[,2], na.rm = TRUE)
   rowToReturn[paste("PredictedMax", part, sep = "_")] = max(transactionTable[,2], na.rm = TRUE)
-  rowToReturn[paste("PredictedMean", part, sep = "_")] = mean(transactionTable[,2], na.rm = TRUE)
+  rowToReturn[paste("PredictedMean", part, sep = "_")] = mean(transactionTable[["PredictedValue"]], na.rm = TRUE)
   
   return(rowToReturn)
 }
@@ -373,6 +373,10 @@ writeAsCSV <- function(data) {
 
 #################################### KERAS ############################################
 
+# func_MyMetric <- custom_metric("my_metric", function(y_true, y_pred) {
+#   k_mean(y_pred)
+# })
+
 # func_to_one_hot <- function(labels, dimension = 46) {
 #   results <- matrix(0, nrow = length(labels), ncol = dimension)
 #   for (i in 1:length(labels))
@@ -380,7 +384,24 @@ writeAsCSV <- function(data) {
 #   results
 # }
 
-funcNormalizedAndLabels <- function(train_data) {
+funcGetSimpleModel <- function(k = 4) {
+  model <- keras_model_sequential() %>%
+    layer_dense(units = 64, activation = "relu", input_shape = c(k*6)) %>%
+    layer_dropout(rate = 0.5) %>% 
+    layer_dense(units = 64, activation = "relu") %>%
+    layer_dropout(rate = 0.5) %>% 
+    layer_dense(units = 3, activation = "softmax")
+  
+  model %>% compile(
+    optimizer = "rmsprop",
+    loss = "categorical_crossentropy",
+    metrics = c('accuracy')
+  )
+  
+  model
+}
+
+funcNormalizedAndLabels <- function(train_data, k = 4) {
   #removing SymbolID
   data <- subset(train_data, select = -2)
   
@@ -401,54 +422,43 @@ funcNormalizedAndLabels <- function(train_data) {
   
   #mormalize
   
-  mean <- apply(data, 2, mean)
-  std <- apply(data, 2, sd)
-  train_data <- scale(data, center = mean, scale = std)
+  data_to_normalize <- data[,1:(k*6)]
+  one_hot_train_labels <- data[, ((k*6)+1):((k*6)+3)]
+  
+  mean <- apply(data_to_normalize, 2, mean)
+  std <- apply(data_to_normalize, 2, sd)
+  x_train <- scale(data_to_normalize, center = mean, scale = std)
   #test_data <- scale(test_data, center = mean, scale = std)
   
-  train_data[is.na(train_data)]<-0
+  x_train[is.na(x_train)]<-0
+  one_hot_train_labels[is.na(one_hot_train_labels)]<-0
   
-  return(train_data)
-}
-
-funcGetSimpleModel <- function(k = 4) {
-  model <- keras_model_sequential() %>%
-    layer_dense(units = 64, activation = "relu", input_shape = c(k*6)) %>%
-    layer_dense(units = 64, activation = "relu") %>%
-    layer_dense(units = 3, activation = "sigmoid")
-  
-  model %>% compile(
-    optimizer = "rmsprop",
-    loss = "categorical_crossentropy",
-    metrics = c("accuracy")
-  )
-  
-  model
+  list(input = x_train, output = one_hot_train_labels)
 }
 
 funcTrain <- function(trainData, k = 4) {
   
-  normalizedData <- funcNormalizedAndLabels(trainData)
+  normalized <- funcNormalizedAndLabels(trainData, k)
   
-  x_train <- normalizedData[,1:(k*6)]
-  one_hot_train_labels <- normalizedData[, ((k*6)+1):((k*6)+3)]
+  x_train <- normalized$input
+  one_hot_train_labels <- normalized$output
   
-  val_indices <- 1:2000
-  x_val <- x_train[val_indices,]
-  partial_x_train <- x_train[-val_indices,]
-  
-  y_val <- one_hot_train_labels[val_indices,]
-  partial_y_train = one_hot_train_labels[-val_indices,]
-  
-  model <- funcGetSimpleModel()
+  # val_indices <- 1:3000
+  # x_val <- x_train[val_indices,]
+  # partial_x_train <- x_train[-val_indices,]
+  # 
+  # y_val <- one_hot_train_labels[val_indices,]
+  # partial_y_train = one_hot_train_labels[-val_indices,]
+  # 
+  model <- funcGetSimpleModel(k)
   
   history <- model %>% fit(
-    partial_x_train,
-    partial_y_train,
-    epochs = 50,
-    batch_size = 128,
-    validation_data = list(x_val, y_val)
-    # validation_split = 0.2
+    x_train,
+    one_hot_train_labels,
+    epochs = 20,
+    batch_size = 64,
+    #validation_data = list(x_val, y_val)
+    validation_split = 0.2
   )
   
   str(history)
@@ -477,12 +487,14 @@ TrainingSet <- read_csv("TrainingSet.csv")
 
 # print(seq)
 
-#one <- funcTransactionPartStatistic(table = TrainingSet)
+k <- 1
+
+# one <- funcTransactionPartStatistic(table = TrainingSet, k)
 
 str(one)
 
 
-funcTrain(one)
+funcTrain(one, k)
 
 
 # 
