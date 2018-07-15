@@ -173,8 +173,9 @@ funcTransactionPartStatistic <- function(table,
                                          numberOfParts = 4) {
   tableWithPartedTransactions <- data.frame()
   
-  numberOfTransactions <- 21
+  numberOfTransactions <- max(table$TransactionID, na.rm = TRUE)
   for (ti in 1:numberOfTransactions) {
+    print(ti)
     oneTransactionTable <- table[table$TransactionID == ti,]
     oneRowTransaction <- funcTransactionToOneRow(transactionTable = oneTransactionTable, numberOfParts = numberOfParts)
     tableWithPartedTransactions <- rbind(tableWithPartedTransactions, oneRowTransaction)
@@ -191,17 +192,17 @@ funcTransactionToOneRow <- function(transactionTable, numberOfParts) {
   rowToReturn <- data.frame(matrix(ncol=0, nrow=0))
   rowToReturn <- transactionTable[1,c("Decision", "SymbolID")]
   
-  numberOfAllDays <- 60
+  numberOfAllDays <- 67 - 1
     
   for (i in 1:numberOfParts) {
-    interval = abs(numberOfAllDays / numberOfParts)
+    interval = floor(numberOfAllDays / numberOfParts)
     
     fromDay <- interval * (i - 1)
     toDay <- interval * i - 1
     
-    selectedTable <- transactionTable[transactionTable$DaysBefore_1 %in% c(fromDay:toDay),]
+    selectedTable <- transactionTable[transactionTable$DaysBefore %in% c(fromDay:toDay),]
     
-    onlyPrediction <- selectedTable[,c("Prediction_1", "PredictedValue_1")]
+    onlyPrediction <- selectedTable[,c("Prediction", "PredictedValue")]
     
     dsds <- funcStaristicForPart(transactionTable = onlyPrediction, part = i)
     
@@ -214,6 +215,18 @@ funcTransactionToOneRow <- function(transactionTable, numberOfParts) {
 funcStaristicForPart <- function(transactionTable, part = 1) {
   rowToReturn = data.frame(matrix(ncol=0, nrow=1))
   
+  rowToReturn[paste("Buys", part, sep = "_")] = 0
+  rowToReturn[paste("Sells", part, sep = "_")] = 0
+  rowToReturn[paste("Holds", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMin", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMax", part, sep = "_")] = 0
+  rowToReturn[paste("PredictedMean", part, sep = "_")] = 0
+  
+  if (nrow(transactionTable) == 0) {
+    return(rowToReturn)
+  }
+  
+  tableTransitionTable <- data.frame(matrix(ncol=0, nrow=1))
   tableTransitionTable <- as.data.frame(table(unlist(transactionTable[, 1])))
   
   rowToReturn[paste("Buys", part, sep = "_")] = tableTransitionTable[tableTransitionTable$Var1 == "Buy", "Freq"]
@@ -228,9 +241,148 @@ funcStaristicForPart <- function(transactionTable, part = 1) {
 
 ############################################# NORMALIZE ##############################
 
-funcNormalize <- function(dataX) {
+# funcNormalize <- function(dataX) {
+#   #removing SymbolID
+#   data <- subset(dataX, select = -2)
+#   
+#   #Decision to 0 0 1 and remove
+#   
+#   decisionCol <- subset(data, select = 1)
+#   data <- subset(data, select = -1)
+#   
+#   data$Buy <- apply(decisionCol, 2, funcCompare, "Buy")
+#   data$Sell <- apply(decisionCol, 2, funcCompare, "Sell")
+#   data$Hold <- apply(decisionCol, 2, funcCompare, "Hold")
+#   
+#   #as numeric
+#   
+#   data <- as.data.frame(sapply(data, as.numeric))
+#   
+#   str(data)
+#   
+#   #mormalize
+#   
+#   mean <- apply(data, 2, mean)
+#   std <- apply(data, 2, sd)
+#   train_data <- scale(data, center = mean, scale = std)
+#   #test_data <- scale(test_data, center = mean, scale = std)
+#   
+#   train_data[is.na(train_data)]<-0
+#   
+#   return(train_data)
+# }
+
+# funcMins <- function(data) {
+#   data[is.na(data)]<-0
+#   mins <- apply(data, 2, min)
+#   mins
+# }
+# 
+# funcMaxs <- function(data) {
+#   data[is.na(data)]<-0
+#   maxs <- apply(data, 2, max)
+#   maxs
+# }
+
+funcCompare <- function(x, rhs) {
+  x[x == rhs] <- 1 
+  x[x != 1] <- 0
+  x
+}
+
+#################################### ML ################################################
+
+# library("neuralnet")
+# 
+# funcTrain <- function(scaledData) {
+#   data <- funcNormalize(scaledData)
+#   net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10), linear.output=FALSE)
+#   #print(net)
+#   #plot(net)
+#   
+#   return(net)
+# }
+
+
+#devtools::install_github("rstudio/keras")
+library(keras)
+#install_keras()
+#install_keras(tensorflow = "gpu")
+
+# funcTrainKeras <- function(trainData, testData) {
+#   trainData <- funcNormalize(trainData)
+#   testData <- funcNormalize(testData)
+#   
+#   model <- keras_model_sequential() 
+#   model %>% 
+#     layer_dense(units = 6, activation = 'relu', input_shape = c(6)) %>% 
+#     layer_dropout(rate = 0.4) %>% 
+#     layer_dense(units = 10, activation = 'relu') %>%
+#     layer_dropout(rate = 0.3) %>%
+#     layer_dense(units = 10, activation = 'softmax')
+#   
+#   summary(model)
+#   
+#   model %>% compile(
+#     loss = 'categorical_crossentropy',
+#     optimizer = optimizer_rmsprop(),
+#     metrics = c('accuracy')
+#   )
+#   
+#   history <- model %>% fit(
+#     trainData, testData, 
+#     epochs = 30, batch_size = 128, 
+#     validation_split = 0.2
+#   )
+#   
+#   plot(history)
+# }
+
+###################################### TEST NET ########################################
+
+# funcTestModel <- function(model, testData) {
+#   data <- funcNormalize(testData)
+#   testModelData <- data[, 1:6]
+#   net.results <- compute(model, testModelData)
+#   
+#   ls(net.results)
+#   
+#   print(net.results$net.result)
+#   
+#   roundedResults <- round(net.results$net.result, 0)
+#   
+#   print(roundedResults)
+#   
+#   #Lets display a better version of the results
+#   cleanoutput <- cbind(testModelData[,1:3], data[,7:9],
+#                        #as.data.frame(net.results$net.result))
+#                        as.data.frame(roundedResults))
+#   colnames(cleanoutput) <- c("IN_BUYS", "IN_SELLS", "IN_HOLDS", "EXP_BUYS", "EXP_SELLS", "EXP_HOLDS", "OUT_BUYS", "OUT_SELLS", "OUT_HOLDS")
+#   print(cleanoutput)
+#   
+#   #a <- table(testModelData[,1:3], roundedResults)
+#   #print(a)
+# }
+
+#################################### WRITE ###########################################
+
+writeAsCSV <- function(data) {
+  write.csv(data, file = "TrainingSet.csv")
+}
+
+
+#################################### KERAS ############################################
+
+# func_to_one_hot <- function(labels, dimension = 46) {
+#   results <- matrix(0, nrow = length(labels), ncol = dimension)
+#   for (i in 1:length(labels))
+#     results[i, labels[[i]] + 1] <- 1
+#   results
+# }
+
+funcNormalizedAndLabels <- function(train_data) {
   #removing SymbolID
-  data <- subset(dataX, select = -2)
+  data <- subset(train_data, select = -2)
   
   #Decision to 0 0 1 and remove
   
@@ -248,131 +400,108 @@ funcNormalize <- function(dataX) {
   str(data)
   
   #mormalize
-  maxs <- apply(data, 2, max) 
-  mins <- apply(data, 2, min)
   
-  scaled <- as.data.frame(scale(data, center = mins, scale = maxs - mins))
+  mean <- apply(data, 2, mean)
+  std <- apply(data, 2, sd)
+  train_data <- scale(data, center = mean, scale = std)
+  #test_data <- scale(test_data, center = mean, scale = std)
   
-  scaled[is.na(scaled)]<-0
+  train_data[is.na(train_data)]<-0
   
-  return(scaled)
+  return(train_data)
 }
 
-funcCompare <- function(x, rhs) {
-  x[x == rhs] <- 1 
-  x[x != 1] <- 0
-  x
-}
-
-#################################### ML ################################################
-
-library("neuralnet")
-
-funcTrain <- function(scaledData) {
-  data <- funcNormalize(scaledData)
-  net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10), linear.output=FALSE)
-  #print(net)
-  #plot(net)
-  
-  return(net)
-}
-
-
-#devtools::install_github("rstudio/keras")
-library(keras)
-#install_keras()
-#install_keras(tensorflow = "gpu")
-
-funcTrainKeras <- function(trainData, testData) {
-  trainData <- funcNormalize(trainData)
-  testData <- funcNormalize(testData)
-  
-  model <- keras_model_sequential() 
-  model %>% 
-    layer_dense(units = 6, activation = 'relu', input_shape = c(6)) %>% 
-    layer_dropout(rate = 0.4) %>% 
-    layer_dense(units = 10, activation = 'relu') %>%
-    layer_dropout(rate = 0.3) %>%
-    layer_dense(units = 10, activation = 'softmax')
-  
-  summary(model)
+funcGetSimpleModel <- function(k = 4) {
+  model <- keras_model_sequential() %>%
+    layer_dense(units = 64, activation = "relu", input_shape = c(k*6)) %>%
+    layer_dense(units = 64, activation = "relu") %>%
+    layer_dense(units = 3, activation = "sigmoid")
   
   model %>% compile(
-    loss = 'categorical_crossentropy',
-    optimizer = optimizer_rmsprop(),
-    metrics = c('accuracy')
+    optimizer = "rmsprop",
+    loss = "categorical_crossentropy",
+    metrics = c("accuracy")
   )
+  
+  model
+}
+
+funcTrain <- function(trainData, k = 4) {
+  
+  normalizedData <- funcNormalizedAndLabels(trainData)
+  
+  x_train <- normalizedData[,1:(k*6)]
+  one_hot_train_labels <- normalizedData[, ((k*6)+1):((k*6)+3)]
+  
+  val_indices <- 1:2000
+  x_val <- x_train[val_indices,]
+  partial_x_train <- x_train[-val_indices,]
+  
+  y_val <- one_hot_train_labels[val_indices,]
+  partial_y_train = one_hot_train_labels[-val_indices,]
+  
+  model <- funcGetSimpleModel()
   
   history <- model %>% fit(
-    trainData, testData, 
-    epochs = 30, batch_size = 128, 
-    validation_split = 0.2
+    partial_x_train,
+    partial_y_train,
+    epochs = 50,
+    batch_size = 128,
+    validation_data = list(x_val, y_val)
+    # validation_split = 0.2
   )
   
+  str(history)
   plot(history)
 }
 
-###################################### TEST NET ########################################
-
-funcTestModel <- function(model, testData) {
-  data <- funcNormalize(testData)
-  testModelData <- data[, 1:6]
-  net.results <- compute(model, testModelData)
-  
-  ls(net.results)
-  
-  print(net.results$net.result)
-  
-  roundedResults <- round(net.results$net.result, 0)
-  
-  print(roundedResults)
-  
-  #Lets display a better version of the results
-  cleanoutput <- cbind(testModelData[,1:3], data[,7:9],
-                       #as.data.frame(net.results$net.result))
-                       as.data.frame(roundedResults))
-  colnames(cleanoutput) <- c("IN_BUYS", "IN_SELLS", "IN_HOLDS", "EXP_BUYS", "EXP_SELLS", "EXP_HOLDS", "OUT_BUYS", "OUT_SELLS", "OUT_HOLDS")
-  print(cleanoutput)
-  
-  #a <- table(testModelData[,1:3], roundedResults)
-  #print(a)
-}
+# funcEvaluateModel <- function() {
+#   results <- model %>% evaluate(x_test, one_hot_test_labels)
+# }
+# 
 
 #################################### MAIN ##############################################
 
 #smaller subset for optiamlisation
-filteredData <- trainingData[trainingData$SymbolID == "S591675",]
+# filteredData <- trainingData[trainingData$SymbolID == "S591675",]
 
 #chunkOfTrainingRecords <- trainingData[1]
 
-parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
+TrainingSet <- read_csv("TrainingSet.csv")
 
-print(parsed)
+# parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
 
-seq <- funcCreateSequenceOneByOne(parsed, 1, filterType = "") 
+# print(parsed)
 
-print(seq)
+# seq <- funcCreateSequenceOneByOne(TrainingSet, 1, filterType = "")
 
-one <- funcTransactionPartStatistic(table = seq, 1)
+# print(seq)
 
-print(one)
+#one <- funcTransactionPartStatistic(table = TrainingSet)
 
-#netModel <- funcTrain(one)
-
-
-
-filteredTestData <- trainingData[trainingData$SymbolID == "S110280",]
-parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
-seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
-oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
-
-print(oneTest)
-
-#funcTestModel(netModel, oneTest)
-
-funcTrainKeras(one,oneTest)
+str(one)
 
 
+funcTrain(one)
+
+
+# 
+# #netModel <- funcTrain(one)
+# 
+# 
+# 
+# filteredTestData <- trainingData[trainingData$SymbolID == "S110280",]
+# parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
+# seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
+# oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
+# 
+# print(oneTest)
+# 
+# #funcTestModel(netModel, oneTest)
+# 
+# funcTrainKeras(one,oneTest)
+# 
+# 
 
 
 
