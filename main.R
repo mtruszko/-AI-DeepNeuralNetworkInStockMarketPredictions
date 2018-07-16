@@ -11,25 +11,42 @@ library(keras)
 
 trainingData <- read_delim("trainingData/trainingData.csv",
                            ";", escape_double = FALSE, trim_ws = TRUE)
-
 funcTransformedTrainingData <- function(x) {
   x$Decision <- factor(x$Decision)
-  x$SymbolID <- factor(x$SymbolID)
+ 
   x
 }
+factoredTrainingData <- funcTransformedTrainingData(trainingData)
+
 
 companyData <- read_delim("trainingData/company_expert.csv", 
                           ";", escape_double = FALSE, trim_ws = TRUE)
-
 funcTransformedCompanyData <- function(x) {
   x <- as.data.frame(x)
   x$CompanyID <- factor(x$CompanyID)
   x$ExpertID <- factor(x$ExpertID)
   x
 }
-
 companyData <- funcTransformedCompanyData(companyData)
-factoredTrainingData <- funcTransformedTrainingData(trainingData)
+
+
+
+testDataCSV <- read_delim("testData/testData.csv",
+                           ";", escape_double = FALSE, trim_ws = TRUE)
+funcTransformedTestData <- function(x) {
+  x$SymbolID <- factor(x$SymbolID)
+  x
+}
+testDataCSV <- funcTransformedTestData(testDataCSV)
+
+testLabelsCSV <- read_delim("testData/true_test_classes.csv",
+                          ";", escape_double = FALSE, trim_ws = TRUE, col_names = FALSE)
+funcTransformedTestLabels <- function(x) {
+  x$Decision <- factor(x$Decision)
+  x
+}
+colnames(testLabelsCSV) <- c("Decision")
+testLabelsCSV <- funcTransformedTestLabels(testLabelsCSV)
 
 ################################# FUNCTIONS ##################################################
 
@@ -334,12 +351,16 @@ funcTrain <- function(trainData, k = 4) {
   
   str(history)
   plot(history)
+  
+  model
 }
 
-# funcEvaluateModel <- function() {
-#   results <- model %>% evaluate(x_test, one_hot_test_labels)
-# }
-# 
+funcEvaluateModel <- function(model) {
+  
+  
+  results <- model %>% evaluate(x_test, one_hot_test_labels)
+}
+
 
 #################################### MAIN ##############################################
 
@@ -368,11 +389,8 @@ str(one)
 funcTrain(one, k)
 
 
-# 
-# #netModel <- funcTrain(one)
-# 
-# 
-# 
+
+
 # filteredTestData <- trainingData[trainingData$SymbolID == "S110280",]
 # parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
 # seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
@@ -383,9 +401,8 @@ funcTrain(one, k)
 # #funcTestModel(netModel, oneTest)
 # 
 # funcTrainKeras(one,oneTest)
-# 
-# 
 
-
+testDataRaw <- cbind(testDataCSV, testLabelsCSV)
+testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
 
 ######################################### END ############################################
