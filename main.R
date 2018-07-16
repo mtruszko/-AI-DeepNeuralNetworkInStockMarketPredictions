@@ -377,12 +377,12 @@ writeAsCSV <- function(data) {
 #   k_mean(y_pred)
 # })
 
-# func_to_one_hot <- function(labels, dimension = 46) {
-#   results <- matrix(0, nrow = length(labels), ncol = dimension)
-#   for (i in 1:length(labels))
-#     results[i, labels[[i]] + 1] <- 1
-#   results
-# }
+func_to_one_hot <- function(labels, dimension = 46) {
+  results <- matrix(0, nrow = length(labels), ncol = dimension)
+  for (i in 1:length(labels))
+    results[i, labels[[i]] + 1] <- 1
+  results
+}
 
 funcGetSimpleModel <- function(k = 4) {
   model <- keras_model_sequential() %>%
@@ -395,7 +395,8 @@ funcGetSimpleModel <- function(k = 4) {
   model %>% compile(
     optimizer = "rmsprop",
     loss = "categorical_crossentropy",
-    metrics = c('accuracy')
+    metrics = c('accuracy',
+                'categorical_accuracy')
   )
   
   model
@@ -406,32 +407,19 @@ funcNormalizedAndLabels <- function(train_data, k = 4) {
   data <- subset(train_data, select = -2)
   
   #Decision to 0 0 1 and remove
-  
-  decisionCol <- subset(data, select = 1)
+  one_hot_train_labels <- model.matrix(~data$Decision-1)
   data <- subset(data, select = -1)
   
-  data$Buy <- apply(decisionCol, 2, funcCompare, "Buy")
-  data$Sell <- apply(decisionCol, 2, funcCompare, "Sell")
-  data$Hold <- apply(decisionCol, 2, funcCompare, "Hold")
-  
   #as numeric
-  
   data <- as.data.frame(sapply(data, as.numeric))
-  
   str(data)
   
   #mormalize
-  
   data_to_normalize <- data[,1:(k*6)]
-  one_hot_train_labels <- data[, ((k*6)+1):((k*6)+3)]
-  
   mean <- apply(data_to_normalize, 2, mean)
   std <- apply(data_to_normalize, 2, sd)
   x_train <- scale(data_to_normalize, center = mean, scale = std)
-  #test_data <- scale(test_data, center = mean, scale = std)
-  
   x_train[is.na(x_train)]<-0
-  one_hot_train_labels[is.na(one_hot_train_labels)]<-0
   
   list(input = x_train, output = one_hot_train_labels)
 }
@@ -456,7 +444,7 @@ funcTrain <- function(trainData, k = 4) {
     x_train,
     one_hot_train_labels,
     epochs = 20,
-    batch_size = 64,
+    batch_size = 512,
     #validation_data = list(x_val, y_val)
     validation_split = 0.2
   )
@@ -487,7 +475,7 @@ TrainingSet <- read_csv("TrainingSet.csv")
 
 # print(seq)
 
-k <- 1
+k <- 5
 
 # one <- funcTransactionPartStatistic(table = TrainingSet, k)
 
