@@ -3,6 +3,10 @@ library(RMOA)
 library(readr)
 library(stringr)
 
+#devtools::install_github("rstudio/keras")
+library(keras)
+
+
 #################################### INITIALIZATION ##########################################
 
 trainingData <- read_delim("trainingData/trainingData.csv",
@@ -241,37 +245,6 @@ funcStaristicForPart <- function(transactionTable, part = 1) {
 
 ############################################# NORMALIZE ##############################
 
-# funcNormalize <- function(dataX) {
-#   #removing SymbolID
-#   data <- subset(dataX, select = -2)
-#   
-#   #Decision to 0 0 1 and remove
-#   
-#   decisionCol <- subset(data, select = 1)
-#   data <- subset(data, select = -1)
-#   
-#   data$Buy <- apply(decisionCol, 2, funcCompare, "Buy")
-#   data$Sell <- apply(decisionCol, 2, funcCompare, "Sell")
-#   data$Hold <- apply(decisionCol, 2, funcCompare, "Hold")
-#   
-#   #as numeric
-#   
-#   data <- as.data.frame(sapply(data, as.numeric))
-#   
-#   str(data)
-#   
-#   #mormalize
-#   
-#   mean <- apply(data, 2, mean)
-#   std <- apply(data, 2, sd)
-#   train_data <- scale(data, center = mean, scale = std)
-#   #test_data <- scale(test_data, center = mean, scale = std)
-#   
-#   train_data[is.na(train_data)]<-0
-#   
-#   return(train_data)
-# }
-
 # funcMins <- function(data) {
 #   data[is.na(data)]<-0
 #   mins <- apply(data, 2, min)
@@ -290,99 +263,17 @@ funcCompare <- function(x, rhs) {
   x
 }
 
-#################################### ML ################################################
-
-# library("neuralnet")
-# 
-# funcTrain <- function(scaledData) {
-#   data <- funcNormalize(scaledData)
-#   net <- neuralnet(Buy+Sell+Hold~Buys_1+Sells_1+Holds_1+PredictedMin_1+PredictedMax_1+PredictedMean_1, data, hidden=c(10,10,10), linear.output=FALSE)
-#   #print(net)
-#   #plot(net)
-#   
-#   return(net)
-# }
-
-
-#devtools::install_github("rstudio/keras")
-library(keras)
-#install_keras()
-#install_keras(tensorflow = "gpu")
-
-# funcTrainKeras <- function(trainData, testData) {
-#   trainData <- funcNormalize(trainData)
-#   testData <- funcNormalize(testData)
-#   
-#   model <- keras_model_sequential() 
-#   model %>% 
-#     layer_dense(units = 6, activation = 'relu', input_shape = c(6)) %>% 
-#     layer_dropout(rate = 0.4) %>% 
-#     layer_dense(units = 10, activation = 'relu') %>%
-#     layer_dropout(rate = 0.3) %>%
-#     layer_dense(units = 10, activation = 'softmax')
-#   
-#   summary(model)
-#   
-#   model %>% compile(
-#     loss = 'categorical_crossentropy',
-#     optimizer = optimizer_rmsprop(),
-#     metrics = c('accuracy')
-#   )
-#   
-#   history <- model %>% fit(
-#     trainData, testData, 
-#     epochs = 30, batch_size = 128, 
-#     validation_split = 0.2
-#   )
-#   
-#   plot(history)
-# }
-
-###################################### TEST NET ########################################
-
-# funcTestModel <- function(model, testData) {
-#   data <- funcNormalize(testData)
-#   testModelData <- data[, 1:6]
-#   net.results <- compute(model, testModelData)
-#   
-#   ls(net.results)
-#   
-#   print(net.results$net.result)
-#   
-#   roundedResults <- round(net.results$net.result, 0)
-#   
-#   print(roundedResults)
-#   
-#   #Lets display a better version of the results
-#   cleanoutput <- cbind(testModelData[,1:3], data[,7:9],
-#                        #as.data.frame(net.results$net.result))
-#                        as.data.frame(roundedResults))
-#   colnames(cleanoutput) <- c("IN_BUYS", "IN_SELLS", "IN_HOLDS", "EXP_BUYS", "EXP_SELLS", "EXP_HOLDS", "OUT_BUYS", "OUT_SELLS", "OUT_HOLDS")
-#   print(cleanoutput)
-#   
-#   #a <- table(testModelData[,1:3], roundedResults)
-#   #print(a)
-# }
-
 #################################### WRITE ###########################################
 
 writeAsCSV <- function(data) {
   write.csv(data, file = "TrainingSet.csv")
 }
 
-
 #################################### KERAS ############################################
 
 # func_MyMetric <- custom_metric("my_metric", function(y_true, y_pred) {
 #   k_mean(y_pred)
 # })
-
-func_to_one_hot <- function(labels, dimension = 46) {
-  results <- matrix(0, nrow = length(labels), ncol = dimension)
-  for (i in 1:length(labels))
-    results[i, labels[[i]] + 1] <- 1
-  results
-}
 
 funcGetSimpleModel <- function(k = 4) {
   model <- keras_model_sequential() %>%
@@ -431,13 +322,6 @@ funcTrain <- function(trainData, k = 4) {
   x_train <- normalized$input
   one_hot_train_labels <- normalized$output
   
-  # val_indices <- 1:3000
-  # x_val <- x_train[val_indices,]
-  # partial_x_train <- x_train[-val_indices,]
-  # 
-  # y_val <- one_hot_train_labels[val_indices,]
-  # partial_y_train = one_hot_train_labels[-val_indices,]
-  # 
   model <- funcGetSimpleModel(k)
   
   history <- model %>% fit(
@@ -445,7 +329,6 @@ funcTrain <- function(trainData, k = 4) {
     one_hot_train_labels,
     epochs = 20,
     batch_size = 512,
-    #validation_data = list(x_val, y_val)
     validation_split = 0.2
   )
   
