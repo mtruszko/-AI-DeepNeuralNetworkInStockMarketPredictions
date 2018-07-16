@@ -320,7 +320,6 @@ funcNormalizedAndLabels <- function(train_data, k = 4) {
   
   #as numeric
   data <- as.data.frame(sapply(data, as.numeric))
-  str(data)
   
   #mormalize
   data_to_normalize <- data[,1:(k*6)]
@@ -344,7 +343,7 @@ funcTrain <- function(trainData, k = 4) {
   history <- model %>% fit(
     x_train,
     one_hot_train_labels,
-    epochs = 20,
+    epochs = 50,
     batch_size = 512,
     validation_split = 0.2
   )
@@ -355,54 +354,37 @@ funcTrain <- function(trainData, k = 4) {
   model
 }
 
-funcEvaluateModel <- function(model) {
+funcEvaluateModel <- function(model, testData, k) {
+  normalized <- funcNormalizedAndLabels(testData, k)
   
+  x_test <- normalized$input
+  one_hot_test_labels <- normalized$output
   
   results <- model %>% evaluate(x_test, one_hot_test_labels)
+  
+  str(results)
 }
 
 
 #################################### MAIN ##############################################
 
-#smaller subset for optiamlisation
-# filteredData <- trainingData[trainingData$SymbolID == "S591675",]
-
-#chunkOfTrainingRecords <- trainingData[1]
-
-TrainingSet <- read_csv("TrainingSet.csv")
-
-# parsed <- funcParseToFull(tableWithRecommendarions = filteredData)
-
-# print(parsed)
-
-# seq <- funcCreateSequenceOneByOne(TrainingSet, 1, filterType = "")
-
-# print(seq)
-
 k <- 5
 
-# one <- funcTransactionPartStatistic(table = TrainingSet, k)
+trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
+write.csv(data, file = "TrainingSet.csv")
+TrainingSet <- read_csv("TrainingSet.csv")
+testDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
+str(testDataSeqStat)
+model <- funcTrain(testDataSeqStat, k)
 
-str(one)
-
-
-funcTrain(one, k)
-
-
-
-
-# filteredTestData <- trainingData[trainingData$SymbolID == "S110280",]
-# parsedTest <- funcParseToFull(tableWithRecommendarions = filteredTestData)
-# seqTest <- funcCreateSequenceOneByOne(parsedTest, 1, filterType = "")
-# oneTest <- funcTransactionPartStatistic(table = seqTest, 1)
-# 
-# print(oneTest)
-# 
-# #funcTestModel(netModel, oneTest)
-# 
-# funcTrainKeras(one,oneTest)
 
 testDataRaw <- cbind(testDataCSV, testLabelsCSV)
 testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
+write.csv(testDataParsed, file = "TestSet.csv")
+TestSet <- read_csv("TestSet.csv")
+testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
+str(testDataSeqStat)
+funcEvaluateModel(model, testDataSeqStat, k)
+
 
 ######################################### END ############################################
