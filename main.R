@@ -302,7 +302,7 @@ funcGetSimpleModel <- function(k = 4) {
     # layer_dropout(rate = 0.2) %>%
     layer_dense(units = 128, activation = "relu") %>%
     # layer_dropout(rate = 0.2) %>%
-    layer_dense(units = 128, activation = "relu") %>%
+    layer_dense(units = 64, activation = "relu") %>%
     # layer_dropout(rate = 0.2) %>%
     layer_dense(units = 3, activation = "softmax")
   
@@ -315,7 +315,7 @@ funcGetSimpleModel <- function(k = 4) {
   model
 }
 
-funcNormalizedAndLabels <- function(data, k = 4) {
+funcNormalizedAndLabels <- function(data, k = 4, isTrain) {
   #removing SymbolID
   data <- subset(data, select = -2)
   
@@ -328,9 +328,11 @@ funcNormalizedAndLabels <- function(data, k = 4) {
   
   #mormalize
   data_to_normalize <- data[,1:(k*6)]
-  mean <- apply(data_to_normalize, 2, mean)
-  std <- apply(data_to_normalize, 2, sd)
-  x_train <- scale(data_to_normalize, center = mean, scale = std)
+  if (isTRUE(isTrain)) {
+    trainMean <<- apply(data_to_normalize, 2, mean)
+    trainStd <<- apply(data_to_normalize, 2, sd)
+  }
+  x_train <- scale(data_to_normalize, center = trainMean, scale = trainStd)
   x_train[is.na(x_train)]<-0
   
   list(input = x_train, output = one_hot_train_labels)
@@ -338,7 +340,7 @@ funcNormalizedAndLabels <- function(data, k = 4) {
 
 funcTrain <- function(trainData, k = 4) {
   
-  normalized <- funcNormalizedAndLabels(trainData, k)
+  normalized <- funcNormalizedAndLabels(trainData, k, TRUE)
   
   x_train <- normalized$input
   one_hot_train_labels <- normalized$output
@@ -360,7 +362,7 @@ funcTrain <- function(trainData, k = 4) {
 }
 
 funcEvaluateModel <- function(model, testData, k) {
-  normalized <- funcNormalizedAndLabels(testData, k)
+  normalized <- funcNormalizedAndLabels(testData, k, FALSE)
   
   x_test <- normalized$input
   one_hot_test_labels <- normalized$output
