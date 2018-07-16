@@ -16,7 +16,7 @@ funcTransformedTrainingData <- function(x) {
  
   x
 }
-factoredTrainingData <- funcTransformedTrainingData(trainingData)
+trainingData <- funcTransformedTrainingData(trainingData)
 
 
 companyData <- read_delim("trainingData/company_expert.csv", 
@@ -370,19 +370,19 @@ funcEvaluateModel <- function(model, testData, k) {
 
 k <- 5
 
-trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
-write.csv(data, file = "TrainingSet.csv")
-TrainingSet <- read_csv("TrainingSet.csv")
-testDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
+# trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
+# write.csv(trainingDataParsed, file = "TrainingSet.csv")
+# TrainingSet <- read_csv("TrainingSet.csv")
+# testDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
 str(testDataSeqStat)
 model <- funcTrain(testDataSeqStat, k)
 
 
-testDataRaw <- cbind(testDataCSV, testLabelsCSV)
-testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
-write.csv(testDataParsed, file = "TestSet.csv")
-TestSet <- read_csv("TestSet.csv")
-testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
+# testDataRaw <- cbind(testDataCSV, testLabelsCSV)
+# testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
+# write.csv(testDataParsed, file = "TestSet.csv")
+# TestSet <- read_csv("TestSet.csv")
+# testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
 str(testDataSeqStat)
 funcEvaluateModel(model, testDataSeqStat, k)
 
