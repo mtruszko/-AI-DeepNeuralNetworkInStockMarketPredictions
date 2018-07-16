@@ -294,25 +294,30 @@ writeAsCSV <- function(data) {
 
 funcGetSimpleModel <- function(k = 4) {
   model <- keras_model_sequential() %>%
-    layer_dense(units = 64, activation = "relu", input_shape = c(k*6)) %>%
-    layer_dropout(rate = 0.5) %>% 
-    layer_dense(units = 64, activation = "relu") %>%
-    layer_dropout(rate = 0.5) %>% 
+    layer_dense(units = 128, activation = "relu", input_shape = c(k*6)) %>%
+    # layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 128, activation = "relu") %>%
+    # layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 128, activation = "relu") %>%
+    # layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 128, activation = "relu") %>%
+    # layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 128, activation = "relu") %>%
+    # layer_dropout(rate = 0.2) %>%
     layer_dense(units = 3, activation = "softmax")
   
   model %>% compile(
     optimizer = "rmsprop",
     loss = "categorical_crossentropy",
-    metrics = c('accuracy',
-                'categorical_accuracy')
+    metrics = c('categorical_accuracy')
   )
   
   model
 }
 
-funcNormalizedAndLabels <- function(train_data, k = 4) {
+funcNormalizedAndLabels <- function(data, k = 4) {
   #removing SymbolID
-  data <- subset(train_data, select = -2)
+  data <- subset(data, select = -2)
   
   #Decision to 0 0 1 and remove
   one_hot_train_labels <- model.matrix(~data$Decision-1)
@@ -343,9 +348,9 @@ funcTrain <- function(trainData, k = 4) {
   history <- model %>% fit(
     x_train,
     one_hot_train_labels,
-    epochs = 50,
-    batch_size = 512,
-    validation_split = 0.2
+    epochs = 200,
+    batch_size = 512
+    # validation_split = 0.2
   )
   
   str(history)
