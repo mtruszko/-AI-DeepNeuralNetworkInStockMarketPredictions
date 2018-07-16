@@ -294,16 +294,19 @@ writeAsCSV <- function(data) {
 
 funcGetSimpleModel <- function(k = 4) {
   model <- keras_model_sequential() %>%
-    layer_dense(units = 128, activation = "relu", input_shape = c(k*6)) %>%
-    # layer_dropout(rate = 0.2) %>%
-    layer_dense(units = 128, activation = "relu") %>%
-    # layer_dropout(rate = 0.2) %>%
-    layer_dense(units = 128, activation = "relu") %>%
-    # layer_dropout(rate = 0.2) %>%
-    layer_dense(units = 128, activation = "relu") %>%
-    # layer_dropout(rate = 0.2) %>%
-    layer_dense(units = 64, activation = "relu") %>%
-    # layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 256, activation = "relu", input_shape = c(k*6)) %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dropout(rate = 0.05) %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dropout(rate = 0.05) %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dropout(rate = 0.05) %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dense(units = 256, activation = "relu") %>%
+    layer_dropout(rate = 0.05) %>%
+    layer_dense(units = 256, activation = "relu") %>%
     layer_dense(units = 3, activation = "softmax")
   
   model %>% compile(
@@ -350,7 +353,7 @@ funcTrain <- function(trainData, k = 4) {
   history <- model %>% fit(
     x_train,
     one_hot_train_labels,
-    epochs = 200,
+    epochs = 500,
     batch_size = 512
     # validation_split = 0.2
   )
@@ -375,7 +378,7 @@ funcEvaluateModel <- function(model, testData, k) {
 
 #################################### MAIN ##############################################
 
-k <- 5
+k <- 15
 
 # trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
 # write.csv(trainingDataParsed, file = "TrainingSet.csv")
