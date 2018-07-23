@@ -288,9 +288,9 @@ writeAsCSV <- function(data) {
 
 #################################### KERAS ############################################
 
-# func_MyMetric <- custom_metric("my_metric", function(y_true, y_pred) {
-#   k_mean(y_pred)
-# })
+func_MyMetric <- custom_metric("my_metric", function(y_true, y_pred) {
+  keras::k_sparse_categorical_crossentropy(y_true, y_pred)
+})
 
 funcGetSimpleModel <- function(k = 4) {
   model <- keras_model_sequential() %>%
@@ -368,13 +368,66 @@ funcEvaluateModel <- function(model, testData, k) {
   normalized <- funcNormalizedAndLabels(testData, k, FALSE)
   
   x_test <- normalized$input
-  one_hot_test_labels <- normalized$output
+  one_hot_test_labels <<- normalized$output
   
   results <- model %>% evaluate(x_test, one_hot_test_labels)
   
   str(results)
+
+  return(model %>% predict(x_test, batch_size = 128))
+}
+library("caret")
+library("ramify")
+
+funcConfusionMatrix <- function(pred, y_test) {
+  y_pred = round(pred)
+
+  colnames(y_test) <- NULL
+  rownames(y_test) <- NULL
+  apply(y_test, 2, as.numeric)
+  sapply(y_test, as.numeric)
+  class(y_test) <- "numeric"
+  storage.mode(y_test) <- "numeric"
+  
+  y_test <- data.matrix(y_test)
+  
+  #form one hot to normal
+  
+  y_test <- argmax(y_test, rows = TRUE)
+  y_pred <- argmax(y_pred, rows = TRUE)
+
+  # y_pred <- as.table(y_pred)
+  # y_test <- as.table(y_test)
+  
+  # confusionMatrix(y_pred, y_test)
+  # Confusion matrix
+  CM = table(y_pred, y_test)
+  print(CM)
+  
+  return(CM)
 }
 
+funcCalculateACC <- function(cm, weights) {
+
+  print(cm)
+  print(weights)
+  
+  accup <- 0
+  for (i in 1:3) {
+    accup <- accup + cm[i,i]*weights[i,i]
+  }
+  
+  accdown <- 0
+  for (i in 1:3) {
+    for(j in 1:3) {
+      accdown <- accdown + cm[i,j]*weights[i,j]
+    }
+  }
+  
+  acc <- accup/accdown
+  print(acc)
+  return(acc)
+}
 
 #################################### MAIN ##############################################
 
@@ -384,8 +437,8 @@ k <- 15
 # write.csv(trainingDataParsed, file = "TrainingSet.csv")
 # TrainingSet <- read_csv("TrainingSet.csv")
 # testDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
-str(testDataSeqStat)
-model <- funcTrain(testDataSeqStat, k)
+# str(testDataSeqStat)
+# model <- funcTrain(testDataSeqStat, k)
 
 
 # testDataRaw <- cbind(testDataCSV, testLabelsCSV)
@@ -393,8 +446,13 @@ model <- funcTrain(testDataSeqStat, k)
 # write.csv(testDataParsed, file = "TestSet.csv")
 # TestSet <- read_csv("TestSet.csv")
 # testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
-str(testDataSeqStat)
-funcEvaluateModel(model, testDataSeqStat, k)
+# str(testDataSeqStat)
+# pred <- funcEvaluateModel(model, testDataSeqStat, k)
 
+cm <- funcConfusionMatrix(pred, one_hot_test_labels)
+
+weights <- rbind(c(8,4,8), c(1, 1, 1), c(8, 4, 8))
+
+acc <- funcCalculateACC(cm, weights)
 
 ######################################### END ############################################
