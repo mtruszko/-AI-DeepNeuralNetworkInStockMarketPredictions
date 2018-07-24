@@ -436,9 +436,9 @@ k <- 15
 # trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
 # write.csv(trainingDataParsed, file = "TrainingSet.csv")
 # TrainingSet <- read_csv("TrainingSet.csv")
-# testDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
-# str(testDataSeqStat)
-# model <- funcTrain(testDataSeqStat, k)
+# trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
+# str(trainDataSeqStat)
+model <- funcTrain(trainDataSeqStat, k)
 
 
 # testDataRaw <- cbind(testDataCSV, testLabelsCSV)
@@ -447,7 +447,7 @@ k <- 15
 # TestSet <- read_csv("TestSet.csv")
 # testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
 # str(testDataSeqStat)
-# pred <- funcEvaluateModel(model, testDataSeqStat, k)
+pred <- funcEvaluateModel(model, testDataSeqStat, k)
 
 cm <- funcConfusionMatrix(pred, one_hot_test_labels)
 
