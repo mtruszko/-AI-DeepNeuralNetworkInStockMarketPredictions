@@ -3,8 +3,6 @@ seq <- 15
 globalModel <- NaN
 columnInSequence <- 6
 
-
-
 funcPrepareForModel <- function(paramData, isTrain) {
   #removing SymbolID
   data <- subset(paramData, select = -2)
@@ -26,15 +24,24 @@ funcPrepareForModel <- function(paramData, isTrain) {
   x_train[is.na(x_train)]<-0
   
   #3 destination sequence
-  x_train <- pad_sequences(x_train, maxlen = columnInSequence)
+  # x_train <- pad_sequences(x_train, maxlen = columnInSequence)
   # cat("input_train shape:", dim(x_train), "\n")
   
-  list(input = x_train, output = one_hot_train_labels)
+  simpleTrain <- x_train #head(x_train, 3)
+  
+  d3_train <- array(simpleTrain, dim = c(nrow(simpleTrain), columnInSequence, seq))
+  d3_train <- aperm(d3_train, c(1,3,2))
+  
+  list(input = d3_train, output = one_hot_train_labels)
 }
 
 funcRNNModel <- function() {
   model <- keras_model_sequential() %>%
-    layer_lstm(units = 32, input_shape = c(seq, columnInSequence)) %>%
+    layer_lstm(units = 256, input_shape = c(seq, columnInSequence)) %>%
+    layer_lstm(units = 256) %>%
+    # layer_lstm(units = 256) %>%
+    # layer_lstm(units = 256) %>%
+    # layer_lstm(units = 256) %>%
     layer_dense(units = 3, activation = "softmax")
   
   model %>% compile(
