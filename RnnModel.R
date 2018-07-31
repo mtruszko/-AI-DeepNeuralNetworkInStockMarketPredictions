@@ -1,5 +1,5 @@
 
-seq <- 15
+seq <- 20
 globalModel <- NaN
 columnInSequence <- 6
 
@@ -37,11 +37,16 @@ funcPrepareForModel <- function(paramData, isTrain) {
 
 funcRNNModel <- function() {
   model <- keras_model_sequential() %>%
-    layer_lstm(units = 256, input_shape = c(seq, columnInSequence)) %>%
-    layer_lstm(units = 256) %>%
-    # layer_lstm(units = 256) %>%
-    # layer_lstm(units = 256) %>%
-    # layer_lstm(units = 256) %>%
+    layer_gru(units = 512, 
+              input_shape = c(seq, columnInSequence)) %>%
+    
+    #    layer_gru(units = 256, 
+    #           dropout = 0.01,
+    #           recurrent_dropout = 0.05,
+    #           return_sequences = TRUE,
+    #           input_shape = c(seq, columnInSequence)) %>%
+    # layer_gru(units = 256) %>%
+
     layer_dense(units = 3, activation = "softmax")
   
   model %>% compile(
@@ -65,7 +70,7 @@ funcTrainRNN <- function(trainData) {
   history <- globalModel %>% fit(
     x_train,
     one_hot_train_labels,
-    epochs = 100,
+    epochs = 250,
     batch_size = 256
   )
   
@@ -83,6 +88,6 @@ funcEvaluateRNN <- function(testData) {
   
   str(results)
   
-  return(globalModel %>% predict(x_test, batch_size = 128))
+  return(globalModel %>% predict(x_test, batch_size = 512))
 }
 

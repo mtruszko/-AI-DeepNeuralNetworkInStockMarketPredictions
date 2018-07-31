@@ -1,5 +1,5 @@
 #MT
-k <- 15
+k <- 20
 # TrainingSet <- read_csv("TrainingSet.csv")
 # trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
 # str(trainDataSeqStat)

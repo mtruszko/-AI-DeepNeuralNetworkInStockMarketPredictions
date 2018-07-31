@@ -409,7 +409,6 @@ funcConfusionMatrix <- function(pred, y_test) {
 
 funcCalculateACC <- function(cm, weights) {
 
-  print(cm)
   print(weights)
   
   accup <- 0
@@ -431,28 +430,28 @@ funcCalculateACC <- function(cm, weights) {
 
 #################################### MAIN ##############################################
 
-k <- 15
-
-# trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
-# write.csv(trainingDataParsed, file = "TrainingSet.csv")
-# TrainingSet <- read_csv("TrainingSet.csv")
-# trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
-# str(trainDataSeqStat)
-model <- funcTrain(trainDataSeqStat, k)
-
-
-# testDataRaw <- cbind(testDataCSV, testLabelsCSV)
-# testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
-# write.csv(testDataParsed, file = "TestSet.csv")
-# TestSet <- read_csv("TestSet.csv")
-# testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
-# str(testDataSeqStat)
-pred <- funcEvaluateModel(model, testDataSeqStat, k)
-
-cm <- funcConfusionMatrix(pred, one_hot_test_labels)
-
-weights <- rbind(c(8,4,8), c(1, 1, 1), c(8, 4, 8))
-
-acc <- funcCalculateACC(cm, weights)
+# k <- 15
+# 
+# # trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
+# # write.csv(trainingDataParsed, file = "TrainingSet.csv")
+# # TrainingSet <- read_csv("TrainingSet.csv")
+# # trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
+# # str(trainDataSeqStat)
+# model <- funcTrain(trainDataSeqStat, k)
+# 
+# 
+# # testDataRaw <- cbind(testDataCSV, testLabelsCSV)
+# # testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
+# # write.csv(testDataParsed, file = "TestSet.csv")
+# # TestSet <- read_csv("TestSet.csv")
+# # testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
+# # str(testDataSeqStat)
+# pred <- funcEvaluateModel(model, testDataSeqStat, k)
+# 
+# cm <- funcConfusionMatrix(pred, one_hot_test_labels)
+# 
+# weights <- rbind(c(8,4,8), c(1, 1, 1), c(8, 4, 8))
+# 
+# acc <- funcCalculateACC(cm, weights)
 
 ######################################### END ############################################
