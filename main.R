@@ -1,10 +1,10 @@
-library(rJava)
-library(RMOA)
 library(readr)
 library(stringr)
 
 #devtools::install_github("rstudio/keras")
 library(keras)
+
+library(ramify)
 
 
 #################################### INITIALIZATION ##########################################
@@ -322,6 +322,8 @@ funcNormalizedAndLabels <- function(data, k = 4, isTrain) {
   #removing SymbolID
   data <- subset(data, select = -2)
   
+  data <- data[sample(nrow(data)),]
+  
   #Decision to 0 0 1 and remove
   one_hot_train_labels <- model.matrix(~data$Decision-1)
   data <- subset(data, select = -1)
@@ -354,8 +356,8 @@ funcTrain <- function(trainData, k = 4) {
     x_train,
     one_hot_train_labels,
     epochs = 500,
-    batch_size = 512
-    # validation_split = 0.2
+    batch_size = 512,
+    validation_split = 0.2
   )
   
   str(history)
@@ -376,8 +378,6 @@ funcEvaluateModel <- function(model, testData, k) {
 
   return(model %>% predict(x_test, batch_size = 128))
 }
-library("caret")
-library("ramify")
 
 funcConfusionMatrix <- function(pred, y_test) {
   y_pred = round(pred)
@@ -409,7 +409,7 @@ funcConfusionMatrix <- function(pred, y_test) {
 
 funcCalculateACC <- function(cm, weights) {
 
-  print(weights)
+  # print(weights)
   
   accup <- 0
   for (i in 1:3) {
@@ -430,28 +430,28 @@ funcCalculateACC <- function(cm, weights) {
 
 #################################### MAIN ##############################################
 
-# k <- 15
-# 
-# # trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
-# # write.csv(trainingDataParsed, file = "TrainingSet.csv")
-# # TrainingSet <- read_csv("TrainingSet.csv")
-# # trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
-# # str(trainDataSeqStat)
-# model <- funcTrain(trainDataSeqStat, k)
-# 
-# 
-# # testDataRaw <- cbind(testDataCSV, testLabelsCSV)
-# # testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
-# # write.csv(testDataParsed, file = "TestSet.csv")
-# # TestSet <- read_csv("TestSet.csv")
-# # testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
-# # str(testDataSeqStat)
-# pred <- funcEvaluateModel(model, testDataSeqStat, k)
-# 
-# cm <- funcConfusionMatrix(pred, one_hot_test_labels)
-# 
-# weights <- rbind(c(8,4,8), c(1, 1, 1), c(8, 4, 8))
-# 
-# acc <- funcCalculateACC(cm, weights)
+k <- 35
+
+# trainingDataParsed <- funcParseToFull(tableWithRecommendarions = trainingData)
+# write.csv(trainingDataParsed, file = "TrainingSet.csv")
+# TrainingSet <- read_csv("TrainingSet.csv")
+# trainDataSeqStat <- funcTransactionPartStatistic(table = TrainingSet, k)
+str(trainDataSeqStat)
+model <- funcTrain(trainDataSeqStat, k)
+
+
+# testDataRaw <- cbind(testDataCSV, testLabelsCSV)
+# testDataParsed <- funcParseToFull(tableWithRecommendarions = testDataRaw)
+# write.csv(testDataParsed, file = "TestSet.csv")
+# TestSet <- read_csv("TestSet.csv")
+# testDataSeqStat <- funcTransactionPartStatistic(table = TestSet, k)
+str(testDataSeqStat)
+pred <- funcEvaluateModel(model, testDataSeqStat, k)
+
+cm <- funcConfusionMatrix(pred, one_hot_test_labels)
+
+weights <- rbind(c(8,4,8), c(1, 1, 1), c(8, 4, 8))
+
+acc <- funcCalculateACC(cm, weights)
 
 ######################################### END ############################################
