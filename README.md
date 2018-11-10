@@ -1,8 +1,12 @@
 <h3 align="center">
-  <img src="Resources/CompetitionImage.png" width="600">
+  <img src="Resources/ICON3.png" width="300">
 </h3>
 
 # Application of Deep Neural Network in Stock Market Return Prediction
+
+<h3 align="center">
+  <img src="Resources/CompetitionImage.png" width="600">
+</h3>
 
 Project created as part of Msc. 
 [Contest data.](https://knowledgepit.fedcsis.org/mod/page/view.php?id=1012)
