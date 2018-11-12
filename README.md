@@ -18,7 +18,7 @@ One of the always-attracting topics is the financial market and its prediction f
 
 ## Conclusions and Remarks
 
-Summarizing the above experiments, one can come to the conclusion that not every data  can be analyzed and learned hidden knowledge, in the same effective way. Sometimes there  are not enough samples for their level of complexity. On the other hand the technology we have is still not adequate.
+Summarizing, one can come to the conclusion that not every data  can be analyzed and learned hidden knowledge, in the same effective way. Sometimes there  are not enough samples for their level of complexity. On the other hand the technology we have is still not adequate.
 Data used in the work belongs to described type of data, which confirms the fact that in the global competition no team has reached the base line, which is what the company ordering the task itself has achieved. The result itself can be interpreted in two ways, it is possible that such a level below 50% of effectiveness is acceptable in comparison to purely random results, which for 3 classes can be taken as 33%. But on the other side this results have a long way to expected 100% effectiveness.
 The 40.77% result I obtained, also did not exceed the base line 43.95%, but in the results of the competition alone, it would place me in the first 14.
 In my experiments, the best attempt was based on RNN, more precisely on GRU, created in 2014. And this is what shows the power of recurrent neural network solutions, which due to continuous development, can be said to be created in front of our eyes.
